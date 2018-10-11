@@ -686,6 +686,12 @@ void PdfWriter::CreateFileIdentifier( PdfString & identifier, const PdfObject* p
     if( pOriginalIdentifier && pTrailer->GetDictionary().HasKey( "ID" ))
     {
         const PdfObject* idObj = pTrailer->GetDictionary().GetKey("ID");
+        // Per the PDF spec, section 7.5.5, the ID shall be an indirect object.
+        // If a non-conforming writer (e.g. Quark and/or Quartz) writes it as
+        // an indirect object, we should handle that case.
+        if (idObj->IsReference()) {
+            idObj = m_vecObjects->GetObject(idObj->GetReference());
+        }
 
         TCIVariantList it = idObj->GetArray().begin();
         if( it != idObj->GetArray().end() &&
