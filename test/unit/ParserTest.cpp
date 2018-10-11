@@ -1981,6 +1981,72 @@ void ParserTest::testIsPdfFile()
     }     
 }
 
+void ParserTest::testRoundTripIndirectTrailerID()
+{
+    std::ostringstream oss;
+    oss << "%PDF-1.1\n";
+    int objN = 0;
+    int objPos[20];
+
+    // Pages
+
+    int pagesObj = objN;
+    objPos[objN] = oss.tellp();
+    oss << objN++ << " 0 obj\n";
+    oss << "<</Type /Pages /Count 0 /Kids []>>\n";
+    oss << "endobj";
+
+    // Root catalog
+
+    int rootObj = objN;
+    objPos[objN] = oss.tellp();
+    oss << objN++ << " 0 obj\n";
+    oss << "<</Type /Catalog /Pages " << pagesObj << " 0 R>>\n";
+    oss << "endobj\n";
+
+    // ID
+    int idObj = objN;
+    objPos[objN] = oss.tellp();
+    oss << objN++ << " 0 obj\n";
+    oss << "[<F1E375363A6314E3766EDF396D614748> <F1E375363A6314E3766EDF396D614748>]\n";
+    oss << "endobj\n";
+
+    int xrefPos = oss.tellp();
+    oss << "xref\n";
+    oss << "0 " << objN << "\n";
+    char objRec[21];
+    for (int i = 0; i < objN; i++) {
+        snprintf(objRec, 21, "%010d 00000 n \n", objPos[i]);
+        oss << objRec;
+    }
+    oss << "trailer <<\n"
+        << "  /Size " << objN << "\n"
+        << "  /Root " << rootObj << " 0 R\n"
+        << "  /ID " << idObj << " 0 R\n" // illegal indirect ID
+        << ">>\n"
+        << "startxref\n"
+        << xrefPos << "\n"
+        << "%%EOF\n";
+
+    std::string inBuf = oss.str();
+    //std::cerr << inBuf;
+    try {
+        PoDoFo::PdfMemDocument doc;
+        // load for update
+        doc.LoadFromBuffer(inBuf.c_str(), inBuf.size(), true);
+
+        PoDoFo::PdfRefCountedBuffer outBuf;
+        PoDoFo::PdfOutputDevice outDev(&outBuf);
+
+        doc.WriteUpdate(&outDev);
+        // should not throw
+        CPPUNIT_ASSERT( true );
+    } catch ( PoDoFo::PdfError& error ) {
+        //error.PrintErrorMsg();
+        CPPUNIT_FAIL( "Unexpected PdfError" );
+    }
+}
+
 std::string ParserTest::generateXRefEntries( size_t count )
 {
     std::string strXRefEntries;
