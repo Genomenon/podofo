@@ -689,8 +689,8 @@ void PdfWriter::CreateFileIdentifier( PdfString & identifier, const PdfObject* p
         // Per the PDF spec, section 7.5.5, the ID shall be an indirect object.
         // If a non-conforming writer (e.g. Quark and/or Quartz) writes it as
         // an indirect object, we should handle that case.
-        if (idObj->IsReference()) {
-            idObj = m_vecObjects->GetObject(idObj->GetReference());
+        if ( idObj->IsReference() ) {
+            idObj = m_vecObjects->GetObject( idObj->GetReference() );
         }
 
         TCIVariantList it = idObj->GetArray().begin();
